@@ -227,7 +227,7 @@
   hosts: "{{ groups['mongodb_servers'][0] }}"
   vars:
     admin_username: "mongoAdmin"
-    admin_password: "changeMe123" # Make sure this matches the password set earlier
+    admin_password: "Password123" # Make sure this matches the password set earlier
   tasks:
     - name: Get replica set status
       community.mongodb.mongodb_status:
