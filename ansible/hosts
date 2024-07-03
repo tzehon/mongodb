@@ -1,17 +1,17 @@
 # Inventory file for MongoDB Replica Set
 
 [mongodb_servers]
-34.143.206.110
-35.240.252.188
-35.247.136.196
+192.168.64.7
+192.168.64.5
+192.168.64.6
 
 [primary]
-34.143.206.110
+192.168.64.7
 
 [secondaries]
-35.240.252.188
-35.247.136.196
+192.168.64.5
+192.168.64.6
 
 [all:vars]
 ansible_user=tth
-ansible_ssh_private_key_file=~/.ssh/sa_challange_gcp
+ansible_ssh_private_key_file=~/.ssh/sa_challenge_utm

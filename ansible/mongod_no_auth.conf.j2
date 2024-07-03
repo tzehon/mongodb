@@ -1,4 +1,4 @@
-# mongod.conf.j2
+# mongod_no_auth.conf.j2
 
 systemLog:
   destination: file
@@ -14,10 +14,6 @@ net:
 
 replication:
   replSetName: {{ replica_set_name }}
-
-security:
-  authorization: enabled
-  keyFile: {{ keyfile_path }}
 
 processManagement:
   timeZoneInfo: /usr/share/zoneinfo
