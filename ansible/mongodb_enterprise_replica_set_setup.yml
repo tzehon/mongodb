@@ -1,5 +1,5 @@
 ---
-- name: Install MongoDB Enterprise Advanced 7.0 Replica Set on Ubuntu 22.04 with Authentication (x86)
+- name: Install MongoDB Enterprise Advanced 7.0 Replica Set on Ubuntu 22.04 with Authentication (arm)
   hosts: mongodb_servers
   become: yes
   vars:
