@@ -10,7 +10,7 @@
     log_directory: "/var/log/mongodb"
     keyfile_path: "/etc/mongodb-keyfile"
     admin_username: "mongoAdmin"
-    admin_password: "changeMe123" # Please change this to a secure password
+    admin_password: "Password123"
 
   pre_tasks:
     - name: Get the IP address of the host
