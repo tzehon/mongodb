@@ -1,0 +1,215 @@
+---
+- name: Install MongoDB Enterprise Advanced 7.0 Replica Set on Ubuntu 22.04 with Authentication (x86)
+  hosts: mongodb_servers
+  become: yes
+  vars:
+    mongodb_version: "7.0"
+    mongodb_repo_url: "https://repo.mongodb.com/apt/ubuntu"
+    replica_set_name: "rs0"
+    data_directory: "/data/mongodb"
+    log_directory: "/var/log/mongodb"
+    keyfile_path: "/etc/mongodb-keyfile"
+    admin_username: "mongoAdmin"
+    admin_password: "changeMe123" # Please change this to a secure password
+
+  tasks:
+    - name: Install python3-pip
+      apt:
+        name: python3-pip
+        state: present
+        update_cache: yes
+
+    - name: Install pymongo
+      pip:
+        name: pymongo
+        state: present
+
+    - name: Install gnupg and curl
+      apt:
+        name:
+          - gnupg
+          - curl
+        state: present
+        update_cache: yes
+
+    - name: Add MongoDB GPG key
+      apt_key:
+        url: https://www.mongodb.org/static/pgp/server-7.0.asc
+        state: present
+
+    - name: Add MongoDB repository
+      apt_repository:
+        repo: "deb [ arch=amd64 ] {{ mongodb_repo_url }} jammy/mongodb-enterprise/{{ mongodb_version }} multiverse"
+        state: present
+        filename: mongodb-enterprise
+
+    - name: Install MongoDB Enterprise packages
+      apt:
+        name:
+          - mongodb-enterprise={{ mongodb_version }}*
+          - mongodb-enterprise-server={{ mongodb_version }}*
+          - mongodb-enterprise-shell={{ mongodb_version }}*
+          - mongodb-enterprise-mongos={{ mongodb_version }}*
+          - mongodb-enterprise-tools={{ mongodb_version }}*
+        state: present
+        update_cache: yes
+
+    - name: Ensure /data directory exists
+      file:
+        path: /data
+        state: directory
+        mode: '0755'
+
+    - name: Create MongoDB data directory
+      file:
+        path: "{{ data_directory }}"
+        state: directory
+        owner: mongodb
+        group: mongodb
+        mode: '0755'
+
+    - name: Create log directory
+      file:
+        path: "{{ log_directory }}"
+        state: directory
+        owner: mongodb
+        group: mongodb
+        mode: '0755'
+
+    - name: Get the IP address of the host
+      set_fact:
+        mongodb_ip: "{{ ansible_default_ipv4.address }}"
+
+    - name: Generate MongoDB keyfile content
+      command: openssl rand -base64 756
+      register: keyfile_content
+      run_once: true
+      delegate_to: "{{ groups['mongodb_servers'][0] }}"
+
+    - name: Create keyfile on all hosts
+      copy:
+        content: "{{ hostvars[groups['mongodb_servers'][0]]['keyfile_content']['stdout'] }}"
+        dest: "{{ keyfile_path }}"
+        mode: '0400'
+        owner: mongodb
+        group: mongodb
+
+    - name: Configure MongoDB
+      template:
+        src: mongod.conf.j2
+        dest: /etc/mongod.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart MongoDB
+
+    - name: Start and enable MongoDB service
+      systemd:
+        name: mongod
+        state: started
+        enabled: yes
+
+    - name: Wait for MongoDB to start
+      wait_for:
+        host: "{{ mongodb_ip }}"
+        port: 27017
+        delay: 10
+        timeout: 60
+
+    - name: Check MongoDB process
+      command: pgrep mongod
+      register: mongod_process
+      ignore_errors: yes
+
+    - name: Display MongoDB process status
+      debug:
+        var: mongod_process
+
+    - name: Check MongoDB log for errors
+      command: tail -n 50 {{ log_directory }}/mongod.log
+      register: mongod_log
+      ignore_errors: yes
+
+    - name: Display MongoDB log
+      debug:
+        var: mongod_log.stdout_lines
+
+    - name: Ensure MongoDB is responsive
+      command: mongosh --host {{ mongodb_ip }} --eval "db.adminCommand('ping')"
+      register: mongo_ping
+      until: mongo_ping.rc == 0
+      retries: 5
+      delay: 10
+
+    - name: Initialize replica set
+      community.mongodb.mongodb_replicaset:
+        login_host: "{{ mongodb_ip }}"
+        login_port: 27017
+        replica_set: "{{ replica_set_name }}"
+        members: "{{ groups['mongodb_servers'] | map('extract', hostvars, ['mongodb_ip']) | map('regex_replace', '^(.*)$', '\\1:27017') | list }}"
+      register: rs_init
+      until: rs_init is succeeded
+      retries: 3
+      delay: 10
+      when: inventory_hostname == groups['mongodb_servers'][0]
+      run_once: true
+
+    - name: Display replica set initialization result
+      debug:
+        var: rs_init
+
+    - name: Wait for replica set to initialize
+      pause:
+        seconds: 30
+
+    - name: Create admin user
+      community.mongodb.mongodb_user:
+        login_host: "{{ mongodb_ip }}"
+        login_port: 27017
+        database: admin
+        name: "{{ admin_username }}"
+        password: "{{ admin_password }}"
+        roles:
+          - role: root
+            db: admin
+        state: present
+      when: inventory_hostname == groups['mongodb_servers'][0]
+      run_once: true
+
+    - name: Restart MongoDB to apply authentication
+      systemd:
+        name: mongod
+        state: restarted
+
+  handlers:
+    - name: Restart MongoDB
+      systemd:
+        name: mongod
+        state: restarted
+      notify: Wait for MongoDB restart
+
+    - name: Wait for MongoDB restart
+      wait_for:
+        host: "{{ mongodb_ip }}"
+        port: 27017
+        delay: 10
+        timeout: 60
+
+- name: Verify replica set status
+  hosts: "{{ groups['mongodb_servers'][0] }}"
+  vars:
+    admin_username: "mongoAdmin"
+    admin_password: "changeMe123" # Make sure this matches the password set earlier
+  tasks:
+    - name: Check replica set status
+      community.mongodb.mongodb_shell:
+        login_host: "{{ hostvars[inventory_hostname]['mongodb_ip'] }}"
+        login_port: 27017
+        login_user: "{{ admin_username }}"
+        login_password: "{{ admin_password }}"
+        eval: "rs.status()"
+      register: rs_status
+
+    - name: Display replica set status
+      debug:
+        var: rs_status.output

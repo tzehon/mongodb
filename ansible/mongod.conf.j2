@@ -1,0 +1,23 @@
+# mongod.conf.j2
+
+systemLog:
+  destination: file
+  logAppend: true
+  path: {{ log_directory }}/mongod.log
+
+storage:
+  dbPath: {{ data_directory }}
+
+net:
+  port: 27017
+  bindIp: 0.0.0.0
+
+replication:
+  replSetName: {{ replica_set_name }}
+
+security:
+  authorization: enabled
+  keyFile: {{ keyfile_path }}
+
+processManagement:
+  timeZoneInfo: /usr/share/zoneinfo
