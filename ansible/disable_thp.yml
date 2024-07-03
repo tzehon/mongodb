@@ -1,0 +1,48 @@
+---
+- name: Disable Transparent Huge Pages (THP)
+  hosts: mongodb_servers
+  become: yes
+  tasks:
+    - name: Temporarily disable THP
+      command: echo never | tee /sys/kernel/mm/transparent_hugepage/enabled
+
+    - name: Temporarily disable THP defrag
+      command: echo never | tee /sys/kernel/mm/transparent_hugepage/defrag
+
+    - name: Create a script to disable THP at boot
+      copy:
+        dest: /etc/init.d/disable-thp
+        content: |
+          #!/bin/bash
+          ### BEGIN INIT INFO
+          # Provides:          disable-thp
+          # Required-Start:    $local_fs
+          # Required-Stop:
+          # Default-Start:     2 3 4 5
+          # Default-Stop:
+          # Short-Description: Disable Transparent Huge Pages
+          # Description:       Disable Transparent Huge Pages at boot time
+          ### END INIT INFO
+
+          case "$1" in
+              start)
+                  echo 'never' > /sys/kernel/mm/transparent_hugepage/enabled
+                  echo 'never' > /sys/kernel/mm/transparent_hugepage/defrag
+                  ;;
+              stop)
+                  echo 'always' > /sys/kernel/mm/transparent_hugepage/enabled
+                  echo 'always' > /sys/kernel/mm/transparent_hugepage/defrag
+                  ;;
+              *)
+                  echo "Usage: $0 {start|stop}"
+                  exit 1
+          esac
+
+          exit 0
+        mode: '0755'
+
+    - name: Register the script to run at startup
+      command: update-rc.d disable-thp defaults
+
+    - name: Ensure the disable-thp script runs at startup
+      command: service disable-thp start
