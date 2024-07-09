@@ -1,0 +1,7 @@
+[ops_manager_hosts]
+ops-manager-1 ansible_host=34.87.173.21
+ops-manager-2 ansible_host=34.126.175.212
+
+[all:vars]
+ansible_user=tth
+ansible_ssh_private_key_file=~/.ssh/sa_challenge_utm

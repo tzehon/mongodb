@@ -3,10 +3,10 @@
   hosts: ops_manager_hosts
   become: yes
   vars:
-    ops_manager_package_path: "/path/to/your/mongodb-mms.deb"
-    remote_package_path: "/tmp/mongodb-mms.deb"
+    ops_manager_package_path: "/Users/tzehon.tan/Downloads/mongodb-mms-7.0.8.500.20240627T1700Z.amd64.deb"
+    remote_package_path: "/tmp/mongodb-mms-7.0.8.500.20240627T1700Z.amd64.deb"
     app_db_hosts:
-      - 34.142.173.17
+      - 34.87.173.21
       - 34.126.175.212
       - 35.247.142.158
 
@@ -31,6 +31,7 @@
         mode: '0644'
 
     - name: Install Ops Manager dependencies
+      become: yes
       apt:
         name:
           - libcurl4
@@ -39,6 +40,7 @@
         update_cache: yes
 
     - name: Install MongoDB Ops Manager from copied package
+      become: yes
       apt:
         deb: "{{ remote_package_path }}"
         state: present
@@ -49,6 +51,7 @@
         state: absent
 
     - name: Create Ops Manager configuration file
+      become: yes
       copy:
         content: |
           # Ops Manager Configuration File
@@ -81,6 +84,7 @@
         mode: '0600'
 
     - name: Start Ops Manager service
+      become: yes
       systemd:
         name: mongodb-mms
         state: restarted
