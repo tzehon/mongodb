@@ -1,0 +1,113 @@
+---
+- name: Deploy MongoDB Ops Manager
+  hosts: ops_manager_hosts
+  become: yes
+  vars:
+    ops_manager_package_path: "/path/to/your/mongodb-mms.deb"
+    remote_package_path: "/tmp/mongodb-mms.deb"
+    app_db_hosts:
+      - 34.142.173.17
+      - 34.126.175.212
+      - 35.247.142.158
+
+  tasks:
+    - name: Check if Ops Manager package exists on control node
+      stat:
+        path: "{{ ops_manager_package_path }}"
+      delegate_to: localhost
+      register: ops_manager_package
+      run_once: true
+
+    - name: Fail if Ops Manager package is not found on control node
+      fail:
+        msg: "Ops Manager package not found at {{ ops_manager_package_path }} on the control node"
+      when: not ops_manager_package.stat.exists
+      run_once: true
+
+    - name: Copy Ops Manager package to target hosts
+      copy:
+        src: "{{ ops_manager_package_path }}"
+        dest: "{{ remote_package_path }}"
+        mode: '0644'
+
+    - name: Install Ops Manager dependencies
+      apt:
+        name:
+          - libcurl4
+          - liblzma5
+        state: present
+        update_cache: yes
+
+    - name: Install MongoDB Ops Manager from copied package
+      apt:
+        deb: "{{ remote_package_path }}"
+        state: present
+
+    - name: Remove copied package
+      file:
+        path: "{{ remote_package_path }}"
+        state: absent
+
+    - name: Create Ops Manager configuration file
+      copy:
+        content: |
+          # Ops Manager Configuration File
+
+          # Ops Manager Application URL
+          mms.centralUrl=http://localhost:8080
+
+          # MongoDB Application Database
+          mongo.mongoUri=mongodb://mongoAdmin:NewPassword123@{{ app_db_hosts | join(',') }}/?replicaSet=rs0&authSource=admin
+
+          # HTTPS Configuration (currently not in use)
+          mms.https.ClientCertificateMode=OPTIONAL
+
+          # Email Configuration (currently not in use)
+          mms.fromEmailAddr=noreply@example.com
+          mms.replyToEmailAddr=reply@example.com
+          mms.adminEmailAddr=admin@example.com
+          mms.mail.transport=smtp
+          mms.mail.hostname=smtp.example.com
+          mms.mail.port=587
+
+          # General Configuration
+          mms.ignoreInitialUiSetup=true
+
+          # Logging Configuration
+          mms.logger.level=INFO
+        dest: /opt/mongodb/mms/conf/conf-mms.properties
+        owner: mongodb-mms
+        group: mongodb-mms
+        mode: '0600'
+
+    - name: Start Ops Manager service
+      systemd:
+        name: mongodb-mms
+        state: restarted
+        enabled: yes
+
+    - name: Wait for Ops Manager to start
+      wait_for:
+        port: 8080
+        delay: 10
+        timeout: 300
+
+    - name: Print Ops Manager URL
+      debug:
+        msg: "Ops Manager is now available at http://{{ ansible_host }}:8080"
+
+- name: Verify Ops Manager installation
+  hosts: localhost
+  tasks:
+    - name: Check Ops Manager web interface
+      uri:
+        url: "http://{{ item }}:8080"
+        method: GET
+        status_code: 200
+      loop: "{{ groups['ops_manager_hosts'] }}"
+      register: http_check
+      ignore_errors: yes
+
+    - name: Display results
+      debug:
+        var: http_check
