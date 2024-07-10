@@ -4,7 +4,8 @@ set -e
 
 # Configuration variables
 OPS_MANAGER_PACKAGE="mongodb-mms-7.0.8.500.20240627T1700Z.amd64.deb"
-APP_DB_URI="mongodb://mongoAdmin:NewPassword123@34.87.173.21:27017,34.126.175.212:27017,35.247.142.158:27017/?replicaSet=rs0&authSource=admin"
+APP_DB_URI="mongodb://mongoAdmin:NewPassword123@34.87.173.21,34.126.175.212,35.247.142.158/?replicaSet=rs0&authSource=admin"
+EXTERNAL_IP="34.126.175.212"
 
 # Function to check if script is run as root
 check_root() {
@@ -17,7 +18,7 @@ check_root() {
 # Function to install dependencies
 install_dependencies() {
     apt-get update
-    apt-get install -y libcurl4 liblzma5
+    apt-get install -y libcurl4 liblzma5 curl
 }
 
 # Function to install Ops Manager
@@ -36,7 +37,7 @@ create_config() {
 # Ops Manager Configuration File
 
 # Ops Manager Application URL
-mms.centralUrl=http://localhost:8080
+mms.centralUrl=http://${EXTERNAL_IP}:8080
 
 # MongoDB Application Database
 mongo.mongoUri=$APP_DB_URI
@@ -73,8 +74,9 @@ start_ops_manager() {
 wait_for_ops_manager() {
     echo "Waiting for Ops Manager to start..."
     for i in {1..30}; do
-        if curl -s http://localhost:8080 > /dev/null; then
+        if curl -s http://${EXTERNAL_IP}:8080 > /dev/null; then
             echo "Ops Manager is up and running!"
+            echo "You can access it at: http://${EXTERNAL_IP}:8080"
             return 0
         fi
         sleep 10
