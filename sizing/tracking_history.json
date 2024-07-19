@@ -11,18 +11,18 @@
     "gps": "$coordinates",
     "activity": {
         "$choose": {
-                "from": [
-                    "origin_scan",
-                    "departure_scan",
-                    "export_scan",
-                    "customs_entry",
-                    "customs_exit",
-                    "import_scan",
-                    "destination_scan",
-                    "out_on_delivery",
-                    "delivered"
-                ]
-            }
+            "from": [
+                "origin_scan",
+                "departure_scan",
+                "export_scan",
+                "customs_entry",
+                "customs_exit",
+                "import_scan",
+                "destination_scan",
+                "out_on_delivery",
+                "delivered"
+            ]
+        }
     },
     "internal_activity": "$bool"
 }
