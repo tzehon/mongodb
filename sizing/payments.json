@@ -1,0 +1,36 @@
+{
+    "tracking_number": {
+        "$number": {
+            "min": 10000000000000,
+            "max": 99999999999999
+        }
+    },
+    "payment": {
+        "method": {
+            "$choose": {
+                "from": [
+                    "paypal",
+                    "card",
+                    "cash"
+                ]
+            }
+        },
+        "metadata": {
+            "card_type": {
+                "$choose": {
+                    "from": [
+                        "visa",
+                        "amex"
+                    ]
+                }
+            },
+            "card_number": {
+                "$number": {
+                    "min": 10000000000000,
+                    "max": 99999999999999
+                }
+            },
+            "expires": "$year"
+        }
+    }
+}
