@@ -6,44 +6,42 @@
             "max": 99999999999999
         }
     },
-    "payment": {
-        "method": {
-            "$choose": {
-                "from": [
-                    "paypal",
-                    "card",
-                    "cash"
-                ]
-            }
-        },
-        "metadata": {
-            "card_type": "$cc_type",
-            "card_number": "$cc",
-            "expires": "$exp",
-            "address": {
-                "country": {
-                    "$country": {
-                        "full": true
-                    }
-                },
-                "state": "$state",
-                "city": "$city",
-                "postcode": "$zip",
-                "street": "$street",
-                "apartment": "$number",
-                "suite": "$number",
-                "department": "$animal",
-                "town": "$city"
+    "method": {
+        "$choose": {
+            "from": [
+                "paypal",
+                "card",
+                "cash"
+            ]
+        }
+    },
+    "metadata": {
+        "card_type": "$cc_type",
+        "card_number": "$cc",
+        "expires": "$exp",
+        "address": {
+            "country": {
+                "$country": {
+                    "full": true
+                }
             },
-            "paypal_hash": "$hash"
+            "state": "$state",
+            "city": "$city",
+            "postcode": "$zip",
+            "street": "$street",
+            "apartment": "$number",
+            "suite": "$number",
+            "department": "$animal",
+            "town": "$city"
         },
-        "vat_id": {
-            "$number": {
-                "min": 1000000,
-                "max": 9999999
-            }
-        },
-        "broker_id": "$number",
-        "code": "$string"
-    }
+        "paypal_hash": "$hash"
+    },
+    "vat_id": {
+        "$number": {
+            "min": 1000000,
+            "max": 9999999
+        }
+    },
+    "broker_id": "$number",
+    "code": "$string"
 }
