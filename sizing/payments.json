@@ -16,21 +16,23 @@
             }
         },
         "metadata": {
-            "card_type": {
-                "$choose": {
-                    "from": [
-                        "visa",
-                        "amex"
-                    ]
-                }
-            },
-            "card_number": {
-                "$number": {
-                    "min": 10000000000000,
-                    "max": 99999999999999
-                }
-            },
-            "expires": "$year"
+            "card_type": "$cc_type",
+            "card_number": "$cc",
+            "expires": "$exp",
+            "address": {
+                "country": {
+                    "$country": {
+                        "full": true
+                    }
+                },
+                "state": "$state",
+                "city": "$city",
+                "postcode": "$zip",
+                "street": "$street",
+                "apartment": "$number",
+                "suite": "$number",
+                "department": "$animal"
+            }
         }
     }
 }
