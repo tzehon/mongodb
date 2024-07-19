@@ -1,4 +1,5 @@
 {
+    "_id": "$objectid",
     "tracking_number": {
         "$number": {
             "min": 10000000000000,
@@ -31,8 +32,18 @@
                 "street": "$street",
                 "apartment": "$number",
                 "suite": "$number",
-                "department": "$animal"
+                "department": "$animal",
+                "town": "$city"
+            },
+            "paypal_hash": "$hash"
+        },
+        "vat_id": {
+            "$number": {
+                "min": 1000000,
+                "max": 9999999
             }
-        }
+        },
+        "broker_id": "$number",
+        "code": "$string"
     }
 }
