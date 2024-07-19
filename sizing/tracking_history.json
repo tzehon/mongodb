@@ -1,5 +1,11 @@
 {
     "_id": "$objectid",
+    "tracking_number": {
+        "$number": {
+            "min": 10000000000000,
+            "max": 99999999999999
+        }
+    },
     "datetime": "$date",
     "location": "$address",
     "gps": "$coordinates",
@@ -17,5 +23,6 @@
                     "delivered"
                 ]
             }
-    }
+    },
+    "internal_activity": "$bool"
 }
