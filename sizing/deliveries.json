@@ -6,5 +6,105 @@
             "max": 99999999999999
         }
     },
-    "rfid": "$hash"
+    "rfid": "$hash",
+    "status": {
+        "$choose": {
+            "from": [
+                "received",
+                "at_origin",
+                "in_customs",
+                "in_transit",
+                "at_destination_warehouse",
+                "out_on_delivery",
+                "delivered",
+                "exception",
+                "returned"
+            ]
+        }
+    },
+    "service_type": {
+        "$choose": {
+            "from": [
+                "express_plus",
+                "express",
+                "express_saver",
+                "standard"
+            ]
+        }
+    },
+    "weight": {
+        "$number": {
+            "min": 1,
+            "max": 100
+        }
+    },
+    "dimensions": {
+        "length": {
+            "$number": {
+                "min": 1,
+                "max": 100
+            }
+        },
+        "width": {
+            "$number": {
+                "min": 1,
+                "max": 100
+            }
+        },
+        "height": {
+            "$number": {
+                "min": 1,
+                "max": 100
+            }
+        },
+        "oversized": "$bool"
+    },
+    "scheduled_delivery": "$date",
+    "shipped_on": "$date",
+    "shipped_from": {
+        "country": {
+            "$country": {
+                "full": true
+            }
+        },
+        "state": "$state",
+        "city": "$city",
+        "postcode": "$zip",
+        "street": "$street",
+        "apartment": "$number",
+        "suite": "$number",
+        "department": "$animal",
+        "town": "$city"
+    },
+    "shipped_to": {
+        "country": {
+            "$country": {
+                "full": true
+            }
+        },
+        "state": "$state",
+        "city": "$city",
+        "postcode": "$zip",
+        "street": "$street",
+        "apartment": "$number",
+        "suite": "$number",
+        "department": "$animal",
+        "town": "$city"
+    },
+    "shipped_from_email": "$email",
+    "shipped_to_email": "$email",
+    "shipment_reference": {
+        "$string": {
+            "length": 35
+        }
+    },
+    "declared_value": "$dollar",
+    "num_packages": "$number",
+    "vat_number": "$number",
+    "metadata": {
+        "carbon_neutral": "$bool",
+        "saturday_delivery": "$bool",
+        "third_party_delivery": "$bool",
+        "additional_insurance": "$bool"
+    }
 }
