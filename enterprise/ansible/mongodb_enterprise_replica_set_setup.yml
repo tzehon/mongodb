@@ -9,8 +9,8 @@
     data_directory: "/data/mongodb"
     log_directory: "/var/log/mongodb"
     keyfile_path: "/etc/mongodb-keyfile"
-    admin_username: "mongoAdmin"
-    admin_password: "Password123"
+    admin_username: "admin"
+    admin_password: "admin"
 
   pre_tasks:
     - name: Get the IP address of the host
@@ -42,10 +42,9 @@
         url: https://www.mongodb.org/static/pgp/server-7.0.asc
         state: present
 
-    # Or arch=amd64
     - name: Add MongoDB repository
       apt_repository:
-        repo: "deb [ arch=arm64 ] {{ mongodb_repo_url }} jammy/mongodb-enterprise/{{ mongodb_version }} multiverse"
+        repo: "deb [ arch=amd64 ] {{ mongodb_repo_url }} jammy/mongodb-enterprise/{{ mongodb_version }} multiverse"
         state: present
         filename: mongodb-enterprise
 
@@ -110,7 +109,6 @@
         owner: root
         group: root
         mode: '0644'
-      notify: Restart MongoDB
 
     - name: Ensure MongoDB is started
       systemd:
@@ -126,74 +124,28 @@
 
     - name: Initialize replica set
       community.mongodb.mongodb_replicaset:
-        login_host: localhost
-        login_port: 27017
         replica_set: "{{ replica_set_name }}"
         members: "{{ groups['mongodb_servers'] | map('extract', hostvars, ['mongodb_ip']) | map('regex_replace', '^(.*)$', '\\1:27017') | list }}"
-      register: rs_init
-      when: inventory_hostname == groups['mongodb_servers'][0]
-      run_once: true
-      ignore_errors: yes
+      when: groups.mongodb_servers.index(inventory_hostname) == 0
 
-    - name: Wait for replica set to stabilize
-      pause:
-        seconds: 30
-      when: rs_init is changed
-
-    - name: Determine replica set status
+    - name: Wait for the replicaset to stabilise
       community.mongodb.mongodb_status:
-        login_host: localhost
-        login_port: 27017
         replica_set: "{{ replica_set_name }}"
-      register: rs_status
-      ignore_errors: yes
-
-    - name: Set primary node fact
-      set_fact:
-        primary_node: >-
-          {{
-            (rs_status.replicaset | default({})
-            | dict2items
-            | selectattr('value', 'equalto', 'PRIMARY')
-            | map(attribute='key')
-            | list
-            | first
-            | regex_replace(':.*$', ''))
-            if (rs_status.replicaset | default({}))
-            else groups['mongodb_servers'][0]
-          }}
-
-    - name: Display primary node
-      debug:
-        var: primary_node
-
-    - name: Check if admin user exists
-      community.mongodb.mongodb_user:
-        login_host: localhost
-        login_port: 27017
-        database: admin
-        name: "{{ admin_username }}"
-        state: present
-      check_mode: yes
-      register: admin_user_check
-      ignore_errors: yes
-      when: inventory_hostname == primary_node
+        poll: 5
+        interval: 30
 
     - name: Create admin user
       community.mongodb.mongodb_user:
-        login_host: localhost
-        login_port: 27017
         database: admin
         name: "{{ admin_username }}"
         password: "{{ admin_password }}"
+        replica_set: "{{ replica_set_name }}"
         roles:
-          - role: root
-            db: admin
+        - dbAdminAnyDatabase
+        - userAdminAnyDatabase
+        - readWriteAnyDatabase
         state: present
-      when:
-        - inventory_hostname == primary_node
-        - admin_user_check is failed or admin_user_check.changed
-      ignore_errors: yes
+
 
     - name: Configure MongoDB with authentication
       template:
@@ -202,14 +154,11 @@
         owner: root
         group: root
         mode: '0644'
-      notify: Restart MongoDB
 
-    - meta: flush_handlers
-
-    - name: Ensure MongoDB is started and enabled
+    - name: Ensure MongoDB is restarted and enabled
       systemd:
         name: mongod
-        state: started
+        state: restarted
         enabled: yes
 
     - name: Wait for MongoDB to be responsive
@@ -218,41 +167,10 @@
         delay: 10
         timeout: 60
 
-  handlers:
-    - name: Restart MongoDB
-      systemd:
-        name: mongod
-        state: restarted
+    - name: Generate mongosh connection string
+      set_fact:
+        mongosh_connection_string: "mongodb://{{ admin_username }}:{{ admin_password }}@{{ groups['mongodb_servers'] | map('extract', hostvars, ['mongodb_ip']) | join(',') }}/admin?replicaSet={{ replica_set_name }}"
 
-- name: Verify replica set status
-  hosts: "{{ groups['mongodb_servers'][0] }}"
-  vars:
-    admin_username: "mongoAdmin"
-    admin_password: "Password123" # Make sure this matches the password set earlier
-  tasks:
-    - name: Get replica set status
-      community.mongodb.mongodb_status:
-        login_host: localhost
-        login_port: 27017
-        login_user: "{{ admin_username }}"
-        login_password: "{{ admin_password }}"
-        login_database: admin
-        # replica_set: "{{ replica_set_name }}"
-      register: rs_status
-
-    - name: Display replica set status
+    - name: Display mongosh connection string
       debug:
-        var: rs_status
-
-    - name: Display replica set members
-      debug:
-        var: rs_status.replicaset
-
-    - name: Check if replica set is healthy
-      assert:
-        that:
-          - rs_status.replicaset is defined
-          - rs_status.replicaset | dict2items | selectattr('value', 'equalto', 'PRIMARY') | list | length == 1
-          - rs_status.replicaset | dict2items | selectattr('value', 'equalto', 'SECONDARY') | list | length >= 1
-        fail_msg: "Replica set is not in a healthy state"
-        success_msg: "Replica set is healthy with one PRIMARY and at least one SECONDARY"
+        msg: "Mongosh connection string: {{ mongosh_connection_string }}"
