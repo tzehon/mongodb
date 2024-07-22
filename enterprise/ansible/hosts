@@ -1,9 +1,9 @@
 # Inventory file for MongoDB Replica Set
 
 [mongodb_servers]
-34.121.95.248
-34.45.74.4
-23.236.52.6
+34.136.166.236
+34.121.94.187
+104.197.88.67
 
 [all:vars]
 ansible_user=tth

@@ -1,5 +1,5 @@
 ---
-- name: Install MongoDB Enterprise Advanced 7.0 Replica Set on Ubuntu 22.04 with Authentication (arm)
+- name: Install MongoDB Enterprise Advanced 7.0 Replica Set on Ubuntu 22.04 with Authentication
   hosts: mongodb_servers
   become: yes
   vars:
@@ -140,12 +140,8 @@
         name: "{{ admin_username }}"
         password: "{{ admin_password }}"
         replica_set: "{{ replica_set_name }}"
-        roles:
-        - dbAdminAnyDatabase
-        - userAdminAnyDatabase
-        - readWriteAnyDatabase
+        roles: root
         state: present
-
 
     - name: Configure MongoDB with authentication
       template:
