@@ -13,11 +13,13 @@ mongodb/
 │   ├── mongod_auth.conf.j2
 │   ├── disable_thp.yml
 │   └── setup.sh
+│   └── hosts
 └── ops_mgr/ansible
     ├── deploy_ops_manager.yml
-    ├── conf-mms.properties.j2
-    ├── setup_nginx_load_balancer.yml
-    └── nginx.conf.j2
+    └── hosts
+└── ops_mgr/bash
+    ├── deploy_nginx_loadbalancer.sh
+    ├── deploy_ops_manager.sh
 ```
 
 ## Files and Their Purposes
@@ -40,7 +42,7 @@ mongodb/
 4. `setup.sh`
    - Bash script that orchestrates the enterprise setup process
 
-### Ops Manager Setup (`ops_mgr/` directory)
+### Ops Manager Setup (`ops_mgr/ansible` directory)
 
 1. `deploy_ops_manager.yml`
    - Ansible playbook for deploying MongoDB Ops Manager across two VMs
@@ -48,15 +50,10 @@ mongodb/
    - Downloads and installs Ops Manager
    - Configures Ops Manager to use an existing MongoDB replica set as its application database
 
-2. `conf-mms.properties.j2`
-   - Jinja2 template for Ops Manager configuration file
+### nginx Setup (`ops_mgr/bash` directory)
 
-3. `setup_nginx_load_balancer.yml`
-   - Ansible playbook for setting up nginx as a load balancer for Ops Manager
-   - Installs and configures nginx
-
-4. `nginx.conf.j2`
-   - Jinja2 template for nginx configuration
+1. `deploy_nginx_loadbalancer.sh`
+   - Deploys a nginx loadbalancer for OM
 
 ## Usage
 
