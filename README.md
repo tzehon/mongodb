@@ -64,7 +64,7 @@ mongodb/
 
 1. Navigate to the `mongodb/enterprise` directory:
    ```
-   cd mongodb/enterprise
+   cd mongodb/enterprise/ansible
    ```
 
 2. Update the `hosts` inventory file with the IP addresses of your MongoDB servers.
@@ -84,7 +84,7 @@ mongodb/
 
 1. Navigate to the `mongodb/ops_mgr` directory:
    ```
-   cd mongodb/ops_mgr
+   cd mongodb/ops_mgr/ansible
    ```
 
 2. Ensure you have set up the application database replica set using the enterprise setup playbook.
