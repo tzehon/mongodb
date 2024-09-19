@@ -89,7 +89,7 @@ mongodb/
 
 2. Ensure you have set up the application database replica set using the enterprise setup playbook.
 
-3. Update the `conf-mms.properties.j2` template with the correct application database URI and other settings.
+3. Update the Ops Manager config that's inline in the playbook with the correct application database URI and other settings.
 
 4. Run the Ops Manager deployment playbook:
    ```
@@ -98,11 +98,9 @@ mongodb/
 
 ### Nginx Load Balancer Setup
 
-1. In the `mongodb/ops_mgr` directory, update the `nginx.conf.j2` template with the correct Ops Manager server IP addresses.
-
-2. Run the nginx setup playbook:
+1. In the `mongodb/ops_mgr/bash` directory, run the nginx setup script:
    ```
-   ansible-playbook -i hosts setup_nginx_load_balancer.yml --ask-become-pass
+   deploy_nginx_loadbalancer.sh
    ```
 
 ## Notes
